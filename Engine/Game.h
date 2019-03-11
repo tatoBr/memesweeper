@@ -23,6 +23,7 @@
 #include "Keyboard.h"
 #include "Mouse.h"
 #include "Graphics.h"
+#include "MemeField.h"
 
 class Game
 {
@@ -36,11 +37,14 @@ private:
 	void UpdateModel();
 	/********************************/
 	/*  User Functions              */
+	bool clickIsOnField(const std::pair<int, int> _mousePos, MemeField & _memeField) const;
 	/********************************/
 private:
 	MainWindow& wnd;
 	Graphics gfx;
 	/********************************/
 	/*  User Variables              */
+	MemeField mf;
+	bool coolOffclick = true;
 	/********************************/
 };

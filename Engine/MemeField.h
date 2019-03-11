@@ -25,7 +25,7 @@ private:
 	class Tile {		
 	public:
 		Tile() = default;
-
+		
 		//Inicializa o Tile 
 		void startUpTile(const Vec2D _gridCoord, const Vec2D _screenCoords)
 		{			
@@ -34,31 +34,51 @@ private:
 
 			state = TileState::Hidden;
 			hasMeme = false;
+			adjacentMemesCount = -1;
 		};
+
 		//Desenha o Tile na tela
-		void draw(Graphics & gfx) const
+		void draw(Graphics & gfx, bool _blownUp) const
 		{
 			switch (state)
 			{
 			case MemeField::Hidden:
-				SpriteCodex::DrawTileButton({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
-				break;
-
-			case MemeField::Flagged:
-				SpriteCodex::DrawTileButton({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
-				SpriteCodex::DrawTileFlag({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
-				break;
-
-			case MemeField::Revealed:				
-				if (hasMeme)
+				if (hasMeme && _blownUp)
 				{
 					SpriteCodex::DrawTileBomb({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
 				}
-				else
-				{
-					SpriteCodex::DrawTile0({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
+				else {
+					SpriteCodex::DrawTileButton({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
 				}
 				break;
+
+			case MemeField::Flagged:
+				if (hasMeme && _blownUp)
+				{
+					SpriteCodex::DrawTileBomb({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
+					SpriteCodex::DrawTileFlag({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
+				}
+				else if (!hasMeme && _blownUp)
+				{
+					SpriteCodex::DrawTileFlag({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
+					SpriteCodex::DrawTileCross({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
+				}
+				else
+				{
+					SpriteCodex::DrawTileButton({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
+					SpriteCodex::DrawTileFlag({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
+				}
+				break;
+
+			case MemeField::Revealed:				
+				if (hasMeme && _blownUp)
+				{
+					SpriteCodex::DrawTileBombRed({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
+				}
+				else
+				{
+					drawNumberTile(gfx);
+				}
 
 			default:
 				break;
@@ -75,6 +95,11 @@ private:
 			return hasMeme;
 		};
 
+		void setAdjacentCount(const int _adjacentMemes)
+		{
+			adjacentMemesCount = _adjacentMemes;
+		}
+
 		//Abre o tile e revela seu conteúdo
 		void reveal()
 		{	
@@ -87,11 +112,17 @@ private:
 			return state == TileState::Hidden;
 		};
 
-		//Marca o tile com um bandeira
+		//Marca e desmarca o tile com um bandeira
 		void flag()
 		{
+			assert(state != TileState::Flagged);
 			state = TileState::Flagged;
 		};
+		void unflag()
+		{
+			assert(state == TileState::Flagged);
+			state = TileState::Hidden;
+		}
 		//Retorna se o tile está ou não marcado
 		bool isFlagged()
 		{
@@ -103,6 +134,53 @@ private:
 		Vec2D screenCoords;//Coordenadas dentro da tela
 		TileState state;//Estado atual do Tile
 		bool hasMeme;//Tile contém ou não um meme
+		int adjacentMemesCount = -1;//Memes existentes nos tiles vizinhos
+
+		void drawNumberTile(Graphics & gfx) const
+		{
+			switch (adjacentMemesCount)
+			{
+			case 0:
+				SpriteCodex::DrawTile0({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
+				break;
+
+			case 1:
+				SpriteCodex::DrawTile1({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
+				break;
+
+			case 2:
+				SpriteCodex::DrawTile2({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
+				break;
+
+			case 3:
+				SpriteCodex::DrawTile3({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
+				break;
+
+			case 4:
+				SpriteCodex::DrawTile4({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
+				break;
+
+			case 5:
+				SpriteCodex::DrawTile5({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
+				break;
+
+			case 6:
+				SpriteCodex::DrawTile6({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
+				break;
+
+			case 7:
+				SpriteCodex::DrawTile7({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
+				break;
+
+			case 8:
+				SpriteCodex::DrawTile8({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
+				break;
+			
+			default:
+				SpriteCodex::DrawTile0({ screenCoords.xCoord, screenCoords.yCoord }, gfx);
+				break;
+			}
+		}		
 	};
 
 public:
@@ -117,13 +195,15 @@ public:
 	//revela um tile do campo
 	void revealTile(const Vec2D gridCoord);
 	//Marca um tile do campo
-	void flagTile(const Vec2D gridCoord);
+	void toggleFlag(const Vec2D gridCoord);
 
 	//Retorna um tile do campo.
 	Tile & tileAt(const int _x, const int _y);
 	Tile & tileAt(Vec2D _gridCoords);
 	const Tile & tileAt(const int _x, const int _y) const;
 	const Tile & tileAt(Vec2D _gridCoords) const;
+
+	int countAdjacentMemes(Vec2D & _gridCoord);
 	
 	//Converte cordenadas de tela em coordenadas de campo
 	Vec2D screenToGridCoords(const Vec2D screenCoords) const;
@@ -138,12 +218,17 @@ private:
 
 	static constexpr int maxColunms = Graphics::ScreenWidth / SpriteCodex::tileSize; //Máximo de colunas de tiles possivel 
 	static constexpr int maxLines = Graphics::ScreenHeight / SpriteCodex::tileSize; // Máximo de linhas Possiveis;
+
 	int colunms;//Número de colunas da instância atual do campo
 	int lines;//Número de linhas da instância atual do campo
+
 	int widthInPixels;//Largura do Campo Memado em pixels
 	int heightInPixels;//Altura do Campo Memado em pixels
-	Vec2D screenPosition;//Posição do campo na tela
-	Vec2D dimensionInPixels;//Dimensões do campo em Pixels
+
+	bool blownUp = false;
+
+	Vec2D screenPosition;//Posição do campo na tela	
+	Vec2D dimensionInPixels;//Dimensões do campo em Pixels	
 	Tile memeTiles[maxColunms * maxLines];//Array de Tiles que formam o campo
 	
 	//Converte coordenadas de Campo em coordenadas de tela

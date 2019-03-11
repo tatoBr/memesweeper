@@ -37,6 +37,18 @@ MemeField::MemeField(int _colunms, int _lines, int _nMemes)
 		}
 
 	} while (_nMemes > 0);
+
+	for (int y = 0; y < lines; y++)
+	{
+		for (int x = 0; x < colunms; x++)
+		{
+			if (!tileAt(x, y).containMeme()) {
+				Vec2D gp = { x, y };
+				tileAt(x, y).setAdjacentCount(countAdjacentMemes(gp));
+			}
+		}
+	}
+	
 }
 
 void MemeField::drawField(Graphics & gfx)
@@ -53,24 +65,32 @@ void MemeField::drawField(Graphics & gfx)
 		for (int col = 0; col < colunms; col++)
 		{
 			const int index = lin * colunms + col;
-			memeTiles[index].draw(gfx);
+			memeTiles[index].draw(gfx, blownUp);
 		}
 	}
 }
 
 void MemeField::revealTile(const Vec2D _gridCoord)
 {	
-	if (tileAt(_gridCoord).isHidden() && !tileAt(_gridCoord).isFlagged())
+	if (tileAt(_gridCoord).isHidden() && !tileAt(_gridCoord).isFlagged() && !blownUp)
 	{
 		tileAt(_gridCoord).reveal();
+		if (tileAt(_gridCoord).containMeme())
+		{
+			blownUp = true;
+		}
 	}
 }
 
-void MemeField::flagTile(const Vec2D _gridCoord)
+void MemeField::toggleFlag(const Vec2D _gridCoord)
 {
-	if (!tileAt(_gridCoord).isFlagged() && tileAt(_gridCoord).isHidden())
+	if (tileAt(_gridCoord).isHidden() && !blownUp)
 	{
 		tileAt(_gridCoord).flag();
+	}
+	else if (tileAt(_gridCoord).isFlagged() && !blownUp)
+	{
+		tileAt(_gridCoord).unflag();
 	}
 }
 
@@ -91,6 +111,30 @@ const MemeField::Tile & MemeField::tileAt(Vec2D _gridCoords) const
 	return tileAt(_gridCoords.xCoord, _gridCoords.yCoord);
 }
 
+int MemeField::countAdjacentMemes(Vec2D & _gridCoord)
+{
+
+	const int xStart = std::max(0 , _gridCoord.xCoord - 1);
+	const int xEnd = std::min(colunms - 1, _gridCoord.xCoord + 1);
+
+	const int yStart = std::max(0, _gridCoord.yCoord - 1);
+	const int yEnd = std::min(lines - 1, _gridCoord.yCoord + 1);
+
+	int nMemes = 0;
+
+	for (int y = yStart; y <= yEnd; y++) {
+		for (int x = xStart; x <= xEnd; x++)
+		{			
+			if (tileAt(x, y).containMeme())
+			{
+				nMemes++;
+			}					
+		}
+	}
+
+	return nMemes;
+}
+
 MemeField::Vec2D MemeField::screenToGridCoords(const Vec2D _screenCoords) const
 {
 	int gridX = ((_screenCoords.xCoord - screenPosition.xCoord) / SpriteCodex::tileSize);
@@ -102,12 +146,10 @@ MemeField::Vec2D & MemeField::getScreenPosition()
 {
 	return  screenPosition;
 }
-
 MemeField::Vec2D & MemeField::getDimension()
 {
 	return dimensionInPixels;
 }
-
 MemeField::Vec2D MemeField::gridToScreenCoords(const Vec2D gridCoords) const
 {
 	const int screenX = screenPosition.xCoord + (gridCoords.xCoord * SpriteCodex::tileSize);

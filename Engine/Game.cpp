@@ -24,7 +24,8 @@
 Game::Game( MainWindow& wnd )
 	:
 	wnd( wnd ),
-	gfx( wnd )
+	gfx( wnd ),
+	mf(10,18,15)
 {
 }
 
@@ -38,8 +39,43 @@ void Game::Go()
 
 void Game::UpdateModel()
 {
+	while (!wnd.mouse.IsEmpty()) {
+		const Mouse::Event e = wnd.mouse.Read();//Le o tipo de evento lançado pela ação do mouse
+
+		if (e.GetType() == Mouse::Event::Type::LPress)
+		{
+			if (clickIsOnField(e.GetPos(), mf))
+			{
+				mf.revealTile(mf.screenToGridCoords({ e.GetPosX() , e.GetPosY() }));
+			}
+		}
+
+		else if (e.GetType() == Mouse::Event::Type::RPress)
+		{
+			if (clickIsOnField(e.GetPos(), mf))
+			{
+				mf.toggleFlag(mf.screenToGridCoords({ e.GetPosX() , e.GetPosY() }));
+			}
+		}
+	}
+	
+	
+}
+
+bool Game::clickIsOnField(const std::pair<int, int> _mousePos, MemeField & _memeField) const
+{
+	const int mouseX = _mousePos.first;
+	const int mouseY = _mousePos.second;
+
+	const int left = _memeField.getScreenPosition().xCoord;
+	const int top = _memeField.getScreenPosition().yCoord;
+	const int right = left + _memeField.getDimension().xCoord;
+	const int botton = top + _memeField.getDimension().yCoord;
+
+	return (mouseX >= left && mouseX <= right) && (mouseY >= top && mouseY <= botton);
 }
 
 void Game::ComposeFrame()
 {
+	mf.drawField(gfx);
 }
